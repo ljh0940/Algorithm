@@ -3,32 +3,21 @@ package boj17144;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.StringTokenizer;
 
-class Pos {
-	int x;
-	int y;
-
-	Pos(int x, int y) {
-		this.x = x;
-		this.y = y;
-	}
-}
-
 class Main {
-
 	static int n;
 	static int m;
+	static int t;
+	static int startPos;
+	static int count;
 
-	static int dx[] = { 0, 0, 1, -1 };
-	static int dy[] = { 1, -1, 0, 0 };
+	static int dx[] = { 1, 0, -1, 0 };
+	static int dy[] = { 0, 1, 0, -1 };
 
-	static int map[][][];
-
-	static Pos machine = null;
-	static Queue<Pos> q = new LinkedList<>();
+	static int nowMap[][];
+	static int nextMap[][];
+	static int countMap[][];
 
 	public static void main(String[] args) throws IOException {
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -36,175 +25,144 @@ class Main {
 
 		n = Integer.parseInt(st.nextToken());
 		m = Integer.parseInt(st.nextToken());
+		t = Integer.parseInt(st.nextToken());
 
-		map = new int[n][m][2];
-
-		int t = Integer.parseInt(st.nextToken());
+		nowMap = new int[n][m];
 
 		for (int i = 0; i < n; i++) {
 			st = new StringTokenizer(br.readLine());
 			for (int j = 0; j < m; j++) {
-				map[i][j][0] = Integer.parseInt(st.nextToken());
+				nowMap[i][j] = Integer.parseInt(st.nextToken());
 
-				if (map[i][j][0] == -1) {
-					machine = new Pos(i, j);
-				}
+				if (nowMap[i][j] == -1 && startPos == 0)
+					startPos = i;
 			}
 		}
 
-		for (int i = 0; i < t; i++) {
-			init();
-			solve();
-			sum();
-			move();
+		for (int k = 0; k < t; k++) {
+			nextMap = new int[n][m];
+			countMap = new int[n][m];
+			spread();
+			mergeMap();
+			blowUp();
+			blowDown();
 		}
 
-		int sum = 0;
+		calcDust();
 
-		for (int i = 0; i < n; i++) {
-			for (int j = 0; j < m; j++) {
-				if (map[i][j][0] != -1) {
-					sum = sum + map[i][j][0];
-				}
-			}
-		}
-
-		System.out.println(sum);
-
+		System.out.println(count);
 	}
 
-	static void init() {
+	static void calcDust() {
 		for (int i = 0; i < n; i++) {
 			for (int j = 0; j < m; j++) {
-				if (map[i][j][0] >= 5)
-					q.add(new Pos(i, j));
+				if (nowMap[i][j] > 0)
+					count += nowMap[i][j];
 			}
 		}
 	}
 
-	static void sum() {
+	static void mergeMap() {
 		for (int i = 0; i < n; i++) {
 			for (int j = 0; j < m; j++) {
-				map[i][j][0] = map[i][j][0] + map[i][j][1];
-				map[i][j][1] = 0;
+				nowMap[i][j] = nowMap[i][j] - countMap[i][j] + nextMap[i][j];
 			}
 		}
 	}
 
-	static void solve() {
-		while (!q.isEmpty()) {
-			Pos p = q.poll();
+	static void blowUp() {
+		int x = startPos - 1;
+		int y = 0;
+		int nextX = startPos - 2;
+		int nextY = 0;
 
-			int count = 0;
-			int temp = map[p.x][p.y][0] / 5;
+		int xFlag = -1;
+		int yFlag = 0;
+		while (true) {
+			if (nextX == startPos && nextY == 0) {
+				nowMap[x][y] = 0;
+				break;
+			}
 
-			for (int i = 0; i < 4; i++) {
-				int nx = p.x + dx[i];
-				int ny = p.y + dy[i];
+			nowMap[x][y] = nowMap[nextX][nextY];
+			x = nextX;
+			y = nextY;
 
-				if (nx < 0 || nx >= n || ny < 0 || ny >= m)
+			if (nextX == 0 && nextY == 0) {
+				xFlag = 0;
+				yFlag = 1;
+			} else if (nextX == 0 && nextY == m - 1) {
+				xFlag = 1;
+				yFlag = 0;
+			} else if (nextX == startPos && nextY == m - 1) {
+				xFlag = 0;
+				yFlag = -1;
+			}
+
+			nextX += xFlag;
+			nextY += yFlag;
+		}
+	}
+
+	static void blowDown() {
+		int x = startPos + 2;
+		int y = 0;
+		int nextX = startPos + 3;
+		int nextY = 0;
+
+		int xFlag = 1;
+		int yFlag = 0;
+		while (true) {
+			if (nextX == startPos + 1 && nextY == 0) {
+				nowMap[x][y] = 0;
+				break;
+			}
+
+			nowMap[x][y] = nowMap[nextX][nextY];
+			x = nextX;
+			y = nextY;
+
+			if (nextX == n - 1 && nextY == 0) {
+				xFlag = 0;
+				yFlag = 1;
+			} else if (nextX == n - 1 && nextY == m - 1) {
+				xFlag = -1;
+				yFlag = 0;
+			} else if (nextX == startPos + 1 && nextY == m - 1) {
+				xFlag = 0;
+				yFlag = -1;
+			}
+
+			nextX += xFlag;
+			nextY += yFlag;
+		}
+	}
+
+	static void spread() {
+		for (int i = 0; i < n; i++) {
+			for (int j = 0; j < m; j++) {
+				int count = 0;
+				if (nowMap[i][j] <= 0)
 					continue;
 
-				if ((nx == machine.x && ny == 0) || (nx == machine.x - 1 && ny == 0))
-					continue;
+				int newDust = nowMap[i][j] / 5;
+				for (int k = 0; k < 4; k++) {
+					int nx = i + dx[k];
+					int ny = j + dy[k];
 
-				count++;
-				map[nx][ny][1] += temp;
-			}
+					if (nx < 0 || nx >= n || ny < 0 || ny >= m)
+						continue;
 
-			map[p.x][p.y][0] = map[p.x][p.y][0] - count * temp;
-		}
-	}
+					if (nowMap[nx][ny] == -1)
+						continue;
 
-	static void move() {
-		int order = 1;
-		int temp1 = 0;
-		for (int i = machine.x - 1;; i = i - order) {
+					count++;
 
-			if (order == -1) {
-				if (i == machine.x - 2)
-					break;
-				else {
-					int temp2 = temp1;
-					temp1 = map[i + 1][0][0];
-					map[i + 1][0][0] = temp2;
+					nextMap[nx][ny] += newDust;
 				}
 
-			} else if (order == 1) {
-				if (i == 0) {
-					int temp2 = temp1;
-					temp1 = map[i][m - 1][0];
-					map[i][m - 1][0] = temp2;
-
-					for (int j = m - 2; j >= 0; j--) {
-						temp2 = temp1;
-						temp1 = map[i][j][0];
-						map[i][j][0] = temp2;
-					}
-					temp2 = temp1;
-					temp1 = map[i + 1][0][0];
-					map[i + 1][0][0] = temp2;
-					order = -1;
-				} else if (i == machine.x - 1) {
-					for (int j = m - 2; j > 0; j--) {
-						int temp2 = map[i][j][0];
-						map[i][j][0] = map[i][j + 1][0];
-						map[i][j + 1][0] = temp2;
-					}
-					temp1 = map[i][1][0];
-					map[i][1][0] = 0;
-				} else {
-					int temp2 = temp1;
-					temp1 = map[i][m - 1][0];
-					map[i][m - 1][0] = temp2;
-				}
-			}
-		}
-
-		order = -1;
-		temp1 = 0;
-
-		for (int i = machine.x;; i = i - order) {
-
-			if (order == 1) {
-				if (i == machine.x + 1)
-					break;
-				else {
-					int temp2 = temp1;
-					temp1 = map[i - 1][0][0];
-					map[i - 1][0][0] = temp2;
-				}
-
-			} else if (order == -1) {
-				if (i == n - 1) {
-					int temp2 = temp1;
-					temp1 = map[i][m - 1][0];
-					map[i][m - 1][0] = temp2;
-
-					for (int j = m - 2; j >= 0; j--) {
-						temp2 = temp1;
-						temp1 = map[i][j][0];
-						map[i][j][0] = temp2;
-					}
-					temp2 = temp1;
-					temp1 = map[i - 1][0][0];
-					map[i - 1][0][0] = temp2;
-					order = 1;
-				} else if (i == machine.x) {
-					for (int j = m - 2; j > 0; j--) {
-						int temp2 = map[i][j][0];
-						map[i][j][0] = map[i][j + 1][0];
-						map[i][j + 1][0] = temp2;
-					}
-					temp1 = map[i][1][0];
-					map[i][1][0] = 0;
-				} else {
-					int temp2 = temp1;
-					temp1 = map[i][m - 1][0];
-					map[i][m - 1][0] = temp2;
-				}
+				countMap[i][j] = count * newDust;
 			}
 		}
 	}
-
 }
