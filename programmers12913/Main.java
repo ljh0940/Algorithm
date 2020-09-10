@@ -19,21 +19,10 @@ class Solution {
 		}
 
 		for (int i = 1; i < land.length; i++) {
-			int max = Math.max(dp[i - 1][1], Math.max(dp[i - 1][2], dp[i - 1][3]));
-			if (dp[i][0] < max + land[i][0])
-				dp[i][0] = max + land[i][0];
-
-			max = Math.max(dp[i - 1][0], Math.max(dp[i - 1][2], dp[i - 1][3]));
-			if (dp[i][1] < max + land[i][1])
-				dp[i][1] = max + land[i][1];
-
-			max = Math.max(dp[i - 1][0], Math.max(dp[i - 1][1], dp[i - 1][3]));
-			if (dp[i][2] < max + land[i][2])
-				dp[i][2] = max + land[i][2];
-
-			max = Math.max(dp[i - 1][0], Math.max(dp[i - 1][1], dp[i - 1][2]));
-			if (dp[i][3] < max + land[i][3])
-				dp[i][3] = max + land[i][3];
+			dp[i][0] = Math.max(dp[i - 1][1], Math.max(dp[i - 1][2], dp[i - 1][3])) + land[i][0];
+			dp[i][1] = Math.max(dp[i - 1][0], Math.max(dp[i - 1][2], dp[i - 1][3])) + land[i][1];
+			dp[i][2] = Math.max(dp[i - 1][0], Math.max(dp[i - 1][1], dp[i - 1][3])) + land[i][2];
+			dp[i][3] = Math.max(dp[i - 1][0], Math.max(dp[i - 1][1], dp[i - 1][2])) + land[i][3];
 		}
 
 		for (int number : dp[land.length - 1]) {
